@@ -57,7 +57,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final String COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
-    private FusedLocationProviderClient mFusedLocationProviderClient;
 
 
     //vars
@@ -89,8 +88,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    public boolean checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+                Log.d(TAG, "checkLocationPermission: permission");
 
-    // Method to check if permission is granted or not
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_CODE);
+            } else {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_CODE);
+            }
+            return false;
+        }
+        return true;
+    }
+
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
@@ -100,6 +112,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                         if (client == null) {
                             // If the client is null, create client
+                            Log.d(TAG, "onRequestPermissionResult: permission");
+
                             buildGoogleApiClient();
                         }
                         map.setMyLocationEnabled(true);
@@ -111,29 +125,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        Toast.makeText(this, "Map is ready", Toast.LENGTH_SHORT).show();
-        Log.d(TAG, "onMapReady: applying map view!");
-        map = googleMap;
-
-
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            map.setMyLocationEnabled(true);
-            buildGoogleApiClient();
-            map.setMapStyle(new MapStyleOptions(getResources()
-                    .getString(R.string.style_json)));
-
-
-
-        }
-    }
-
     protected synchronized void buildGoogleApiClient() {
 
+        Log.d(TAG, "buildGoogleApiClient: building client obj");
 
         // Creating Google API client
         client = new GoogleApiClient.Builder(this)
@@ -145,7 +139,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Connecting client
         client.connect();
     }
-
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
@@ -178,6 +171,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        Toast.makeText(this, "Map is ready", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "onMapReady: applying map view!");
+        map = googleMap;
+
+
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            map.setMyLocationEnabled(true);
+            buildGoogleApiClient();
+            map.setMapStyle(new MapStyleOptions(getResources()
+                    .getString(R.string.style_json)));
+
+
+
+        }
+    }
+
+
+
 
 
 
@@ -194,6 +209,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onLocationChanged(Location location) {
         // Once this method is triggered...
+        Log.d(TAG, "onLocationChanged: updating location...");
+
 
         lastLocation = location;
 
@@ -223,21 +240,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-    public boolean checkLocationPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_CODE);
-            } else {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_CODE);
-            }
-            return false;
-        }
-        return true;
-    }
 
     private void moveCamera(LatLng latlgn) {
         Log.d(TAG, "moving the camera to: lat " + latlgn.latitude + " and log " + latlgn.longitude);
-        map.moveCamera(CameraUpdateFactory.newLatLng(latlgn));
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(latlgn, DEFAULT_ZOOM));
 
     }
 
