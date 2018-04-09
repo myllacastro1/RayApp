@@ -2,22 +2,31 @@ package com.mylladecastro.ray;
 
 import android.Manifest;
 import android.app.Dialog;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Build;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.Menu;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.gms.common.api.Response;
 import com.google.android.gms.location.places.PlaceReport;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -45,13 +54,20 @@ import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener {
 
-
+    double latitude;
+    double longitude;
+    private int PROXIMITY_RADIUS = 500;
     private static final String TAG = MapsActivity.class.getSimpleName();
     private static final int ERROR_DIALOG_REQUEST = 9001;
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
@@ -66,11 +82,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LocationRequest locationRequest;
     private Location lastLocation;
     private Marker currentLocationMarker;
-    private static final float DEFAULT_ZOOM = 26f;
+    private static final float DEFAULT_ZOOM = 16f;
     public static final int REQUEST_LOCATION_CODE = 99;
     private FusedLocationProviderClient mFusedLocationClient;
-
-
+    String type;
 
 
     @Override
@@ -82,11 +97,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             checkLocationPermission();
         }
 
+
+        /////////////////
+        Intent intent = getIntent();
+        Bundle bundle = intent.getExtras();
+        type="hospital";
+        /////////////////
+
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
     }
+
 
     public boolean checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -112,11 +135,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                         if (client == null) {
                             // If the client is null, create client
-                            Log.d(TAG, "onRequestPermissionResult: permission");
+                            Log.d(TAG, "onRequestPermissionResult: client is null");
 
                             buildGoogleApiClient();
                         }
                         map.setMyLocationEnabled(true);
+                        Log.d(TAG, "onRequestPermissionResult: enabling location");
+
                     }
                 } else {
                     Toast.makeText(this, "Permission denied", Toast.LENGTH_LONG).show();
@@ -179,20 +204,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         map = googleMap;
 
 
-
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             map.setMyLocationEnabled(true);
+
+
+            //////////////
+            map.getUiSettings().setCompassEnabled(true);
+            map.getUiSettings().setZoomControlsEnabled(true);
+            map.getUiSettings().setMyLocationButtonEnabled(true);
+            map.getUiSettings().setAllGesturesEnabled(true);
+
+            /////////////
+
             buildGoogleApiClient();
             map.setMapStyle(new MapStyleOptions(getResources()
                     .getString(R.string.style_json)));
 
-
-
         }
     }
-
-
-
 
 
 
@@ -233,6 +262,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Moving camera to current location
         moveCamera(latlgn);
 
+        getNearbyPlacesMarkers(location);
+
+
+
         if(client == null){
             LocationServices.FusedLocationApi.removeLocationUpdates(client, this);
         }
@@ -240,12 +273,48 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    private void getNearbyPlacesMarkers(Location location) {
+        List<MarkerOptions> nearbyPlaces;
+
+        latitude = location.getLatitude();
+        longitude = location.getLongitude();
+
+        String restaurant = "restaurant";
+        Log.d(TAG, "onMapReady: almost getting url");
+        String url = getUrl(latitude, longitude, restaurant);
+        Object[] DataTransfer = new Object[2];
+        DataTransfer[0] = map;
+        Log.d(TAG, "MapsActivity map: " + map.toString());
+        DataTransfer[1] = url;
+        Log.d(TAG, DataTransfer[0].toString());
+        Log.d(TAG,"getNearbyPlacesMarkers: " + url);
+        NearbyPlaces getNearbyPlacesData = new NearbyPlaces();
+        getNearbyPlacesData.execute(DataTransfer);
+        //Log.d(TAG,"getNearbyPlacesMarkers: " + nearbyPlaces.size());
+        //for (int i = 0; i < nearbyPlaces.size(); i++) {
+        //    map.addMarker(nearbyPlaces.get(i));
+        //}
+
+    }
 
     private void moveCamera(LatLng latlgn) {
         Log.d(TAG, "moving the camera to: lat " + latlgn.latitude + " and log " + latlgn.longitude);
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(latlgn, DEFAULT_ZOOM));
 
     }
+
+    private String getUrl(double latitude, double longitude, String nearbyPlace) {
+
+        StringBuilder googlePlacesUrl = new StringBuilder("https://maps.googleapis.com/maps/api/place/nearbysearch/json?");
+        googlePlacesUrl.append("location=" + latitude + "," + longitude);
+        googlePlacesUrl.append("&radius=" + PROXIMITY_RADIUS);
+        googlePlacesUrl.append("&type=" + nearbyPlace);
+        googlePlacesUrl.append("&key=" + "AIzaSyBX1iSgXWG6bEwqAdcEra-vsrYkndaak6A");
+
+        Log.d(TAG, "getUrl " + googlePlacesUrl.toString());
+        return (googlePlacesUrl.toString());
+    }
+
 
 
 }
