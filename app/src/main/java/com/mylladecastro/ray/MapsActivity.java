@@ -67,7 +67,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     double latitude;
     double longitude;
-    private int PROXIMITY_RADIUS = 500;
+    private int PROXIMITY_RADIUS = 50;
     private static final String TAG = MapsActivity.class.getSimpleName();
     private static final int ERROR_DIALOG_REQUEST = 9001;
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
@@ -82,7 +82,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LocationRequest locationRequest;
     private Location lastLocation;
     private Marker currentLocationMarker;
-    private static final float DEFAULT_ZOOM = 16f;
+    private static final float DEFAULT_ZOOM = 26f;
     public static final int REQUEST_LOCATION_CODE = 99;
     private FusedLocationProviderClient mFusedLocationClient;
     String type;
@@ -209,10 +209,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
             //////////////
-            map.getUiSettings().setCompassEnabled(true);
-            map.getUiSettings().setZoomControlsEnabled(true);
-            map.getUiSettings().setMyLocationButtonEnabled(true);
-            map.getUiSettings().setAllGesturesEnabled(true);
+            map.getUiSettings().setCompassEnabled(false);
+            map.getUiSettings().setZoomControlsEnabled(false);
+            map.getUiSettings().setMyLocationButtonEnabled(false);
+            map.getUiSettings().setAllGesturesEnabled(false);
 
             /////////////
 
@@ -243,6 +243,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         lastLocation = location;
 
+        // Getting nearby locations
+        getNearbyPlacesMarkers(location);
+
+
+        //Setting current location
         // If the marker is already set, remove it to replace by the current location one
         if(currentLocationMarker != null) {
             currentLocationMarker.remove();
@@ -262,7 +267,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Moving camera to current location
         moveCamera(latlgn);
 
-        getNearbyPlacesMarkers(location);
+        //getNearbyPlacesMarkers(location);
 
 
 
