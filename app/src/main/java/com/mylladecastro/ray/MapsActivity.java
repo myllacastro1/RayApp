@@ -176,6 +176,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         locationRequest.setInterval(5000);
         locationRequest.setFastestInterval(5000);
         locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+                .addLocationRequest(locationRequest);
+
+        builder.setAlwaysShow(true);
 
 
 
@@ -213,6 +217,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             map.getUiSettings().setZoomControlsEnabled(false);
             map.getUiSettings().setMyLocationButtonEnabled(false);
             map.getUiSettings().setAllGesturesEnabled(false);
+            map.setMyLocationEnabled(false);
 
             /////////////
 
@@ -279,12 +284,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void getNearbyPlacesMarkers(Location location) {
-        List<MarkerOptions> nearbyPlaces;
 
         latitude = location.getLatitude();
         longitude = location.getLongitude();
 
-        String restaurant = "restaurant";
+        String restaurant = "restaurant,park,school";
         Log.d(TAG, "onMapReady: almost getting url");
         String url = getUrl(latitude, longitude, restaurant);
         Object[] DataTransfer = new Object[2];
@@ -299,7 +303,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //for (int i = 0; i < nearbyPlaces.size(); i++) {
         //    map.addMarker(nearbyPlaces.get(i));
         //}
-
     }
 
     private void moveCamera(LatLng latlgn) {

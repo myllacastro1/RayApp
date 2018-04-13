@@ -1,5 +1,6 @@
 package com.mylladecastro.ray;
 
+import android.location.Location;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
@@ -46,18 +47,19 @@ public class NearbyPlaces extends AsyncTask<Object, String, String> {
 
     @Override
     protected void onPostExecute(String result){
-        Log.d("GooglePlacesReadTask", "onPostExecute Entered");
+        Log.d(TAG, "onPostExecute Entered");
         List<HashMap<String, String>> nearbyPlacesList = null;
         DataParser dataParser = new DataParser();
         nearbyPlacesList =  dataParser.parse(result);
         fillNearbyPlacesList(nearbyPlacesList);
-        Log.d("GooglePlacesReadTask", "onPostExecute Exit");
+        Log.d(TAG, "onPostExecute Exit");
     }
+
+
 
     private void fillNearbyPlacesList(List<HashMap<String, String>> nearbyPlacesList) {
         // before loop:
         for (int i = 0; i < nearbyPlacesList.size(); i++) {
-            MarkerOptions markerOptions = new MarkerOptions();
             HashMap<String, String> googlePlace = nearbyPlacesList.get(i);
             double lat = Double.parseDouble(googlePlace.get("lat"));
             double lng = Double.parseDouble(googlePlace.get("lng"));
@@ -67,6 +69,9 @@ public class NearbyPlaces extends AsyncTask<Object, String, String> {
 
             String placeName = googlePlace.get("place_name");
             String vicinity = googlePlace.get("vicinity");
+
+            Log.d(TAG, placeName);
+            Log.d(TAG, vicinity);
 
             mMap.addMarker(new MarkerOptions()
                             .position(new LatLng(lat, lng))
