@@ -69,7 +69,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     double latitude;
     double longitude;
-    private int PROXIMITY_RADIUS = 500;
     private static final String TAG = MapsActivity.class.getSimpleName();
     private static final int ERROR_DIALOG_REQUEST = 9001;
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
@@ -290,16 +289,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         String restaurant = "school";
         Log.d(TAG, "getNearbyPlacesMarkers: almost getting url");
-        String url = getUrl(latitude, longitude, restaurant);
+        //String url = getUrl(latitude, longitude, restaurant);
         Object[] DataTransfer = new Object[3];
         DataTransfer[0] = map;
         Log.d(TAG, "getNearbyPlacesMarkers map: " + map.toString());
-        DataTransfer[1] = url;
-        DataTransfer[2] = location;
-        Log.d(TAG, DataTransfer[0].toString());
-        Log.d(TAG,DataTransfer[1].toString());
+        DataTransfer[1] = location;
 
-        // Adding nearby places markers on the map
+        // Adding nearby places markers on the maps
         NearbyPlaces getNearbyPlacesData = new NearbyPlaces();
         getNearbyPlacesData.execute(DataTransfer);
 
@@ -310,18 +306,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Log.d(TAG, "moving the camera to: lat " + latlgn.latitude + " and log " + latlgn.longitude);
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(latlgn, DEFAULT_ZOOM));
 
-    }
-
-    private String getUrl(double latitude, double longitude, String nearbyPlace) {
-
-        StringBuilder googlePlacesUrl = new StringBuilder("https://maps.googleapis.com/maps/api/place/nearbysearch/json?");
-        googlePlacesUrl.append("location=" + latitude + "," + longitude);
-        googlePlacesUrl.append("&radius=" + PROXIMITY_RADIUS);
-        googlePlacesUrl.append("&type=" + nearbyPlace);
-        googlePlacesUrl.append("&key=" + "AIzaSyDRJGcOuLrHdGBPdHssSMaLAJQ4AkjuQck");
-
-        Log.d(TAG, "getUrl " + googlePlacesUrl.toString());
-        return (googlePlacesUrl.toString());
     }
 
 

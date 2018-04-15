@@ -27,6 +27,7 @@ public class NearbyPlaces extends AsyncTask<Object, String, String> {
     String url;
     protected List<HashMap<String, String>> nearbyPlacesList;
     private Location currentLocation;
+    private int PROXIMITY_RADIUS = 500;
 
 
     @Override
@@ -35,10 +36,10 @@ public class NearbyPlaces extends AsyncTask<Object, String, String> {
             Log.d(TAG, "doInBackground started");
             this.mMap = (GoogleMap) params[0];
             Log.d(TAG, "NearbyPlaces map: " + mMap.toString());
-
-            this.url = (String) params[1];
-            this.currentLocation = (Location) params[2];
-            Log.d(TAG, url);
+            this.currentLocation = (Location) params[1];
+            // Getting url
+            String url = getUrl(currentLocation.getLatitude(), currentLocation.getLongitude());
+            // Downloading url data (json)
             DownloadUrl downloadUrl = new DownloadUrl();
             googlePlacesData = downloadUrl.readUrl(url);
             Log.d(TAG, "googlePlacesData: " + googlePlacesData);
@@ -108,6 +109,18 @@ public class NearbyPlaces extends AsyncTask<Object, String, String> {
         Log.d(TAG, "Distance in meters: " + String.valueOf(distance[0]));
 
         return distance[0];
+    }
+
+    private String getUrl(double latitude, double longitude) {
+        String nearbyPlace = "school";
+        StringBuilder googlePlacesUrl = new StringBuilder("https://maps.googleapis.com/maps/api/place/nearbysearch/json?");
+        googlePlacesUrl.append("location=" + latitude + "," + longitude);
+        googlePlacesUrl.append("&radius=" + PROXIMITY_RADIUS);
+        googlePlacesUrl.append("&type=" + nearbyPlace);
+        googlePlacesUrl.append("&key=" + "AIzaSyDRJGcOuLrHdGBPdHssSMaLAJQ4AkjuQck");
+
+        Log.d(TAG, "getUrl " + googlePlacesUrl.toString());
+        return (googlePlacesUrl.toString());
     }
 
 }
