@@ -57,7 +57,9 @@ import com.google.android.gms.tasks.Task;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
@@ -67,7 +69,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     double latitude;
     double longitude;
-    private int PROXIMITY_RADIUS = 50;
+    private int PROXIMITY_RADIUS = 500;
     private static final String TAG = MapsActivity.class.getSimpleName();
     private static final int ERROR_DIALOG_REQUEST = 9001;
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
@@ -82,10 +84,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LocationRequest locationRequest;
     private Location lastLocation;
     private Marker currentLocationMarker;
-    private static final float DEFAULT_ZOOM = 26f;
+    private static final float DEFAULT_ZOOM = 36f;
     public static final int REQUEST_LOCATION_CODE = 99;
     private FusedLocationProviderClient mFusedLocationClient;
     String type;
+    String markers;
+    private List<HashMap<String, String>> nearbyPlaces;
 
 
     @Override
@@ -176,10 +180,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         locationRequest.setInterval(5000);
         locationRequest.setFastestInterval(5000);
         locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
-                .addLocationRequest(locationRequest);
-
-        builder.setAlwaysShow(true);
 
 
 
@@ -214,7 +214,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             //////////////
             map.getUiSettings().setCompassEnabled(false);
-            map.getUiSettings().setZoomControlsEnabled(false);
+            map.getUiSettings().setZoomControlsEnabled(true);
             map.getUiSettings().setMyLocationButtonEnabled(false);
             map.getUiSettings().setAllGesturesEnabled(false);
             map.setMyLocationEnabled(false);
@@ -288,22 +288,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         latitude = location.getLatitude();
         longitude = location.getLongitude();
 
-        String restaurant = "restaurant,park,school";
-        Log.d(TAG, "onMapReady: almost getting url");
+        String restaurant = "school";
+        Log.d(TAG, "getNearbyPlacesMarkers: almost getting url");
         String url = getUrl(latitude, longitude, restaurant);
-        Object[] DataTransfer = new Object[2];
+        Object[] DataTransfer = new Object[3];
         DataTransfer[0] = map;
-        Log.d(TAG, "MapsActivity map: " + map.toString());
+        Log.d(TAG, "getNearbyPlacesMarkers map: " + map.toString());
         DataTransfer[1] = url;
+        DataTransfer[2] = location;
         Log.d(TAG, DataTransfer[0].toString());
-        Log.d(TAG,"getNearbyPlacesMarkers: " + url);
+        Log.d(TAG,DataTransfer[1].toString());
+
+        // Adding nearby places markers on the map
         NearbyPlaces getNearbyPlacesData = new NearbyPlaces();
         getNearbyPlacesData.execute(DataTransfer);
-        //Log.d(TAG,"getNearbyPlacesMarkers: " + nearbyPlaces.size());
-        //for (int i = 0; i < nearbyPlaces.size(); i++) {
-        //    map.addMarker(nearbyPlaces.get(i));
-        //}
+
     }
+
 
     private void moveCamera(LatLng latlgn) {
         Log.d(TAG, "moving the camera to: lat " + latlgn.latitude + " and log " + latlgn.longitude);
@@ -317,10 +318,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         googlePlacesUrl.append("location=" + latitude + "," + longitude);
         googlePlacesUrl.append("&radius=" + PROXIMITY_RADIUS);
         googlePlacesUrl.append("&type=" + nearbyPlace);
-        googlePlacesUrl.append("&key=" + "AIzaSyBX1iSgXWG6bEwqAdcEra-vsrYkndaak6A");
+        googlePlacesUrl.append("&key=" + "AIzaSyDRJGcOuLrHdGBPdHssSMaLAJQ4AkjuQck");
 
         Log.d(TAG, "getUrl " + googlePlacesUrl.toString());
         return (googlePlacesUrl.toString());
+    }
+
+
+    public List<HashMap<String, String>> getNearbyPlaces() {
+        return nearbyPlaces;
+    }
+
+    public void setNearbyPlaces(List<HashMap<String, String>> nearbyPlaces) {
+        this.nearbyPlaces = nearbyPlaces;
     }
 
 

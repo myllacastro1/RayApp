@@ -64,7 +64,7 @@ public class DataParser {
         String vicinity = "-NA-";
         String latitude = "";
         String longitude = "";
-        String reference = "";
+        String open_now = "";
 
         Log.d(TAG, "getPlace: collecting places");
 
@@ -78,14 +78,23 @@ public class DataParser {
             if (!googlePlaceJson.isNull("vicinity")) {
                 vicinity = googlePlaceJson.getString("vicinity");
             }
+
+            if (googlePlaceJson.has("opening_hours")) {
+                open_now = String.valueOf(googlePlaceJson.getJSONObject("opening_hours").getBoolean("open_now"));
+                googlePlaceMap.put("open_now", open_now);
+            }
+
+            // Get list of types for that PoI
+            JSONArray types = googlePlaceJson.getJSONArray("types");
+            // Get lat and lgn for that PoI
             latitude = googlePlaceJson.getJSONObject("geometry").getJSONObject("location").getString("lat");
             longitude = googlePlaceJson.getJSONObject("geometry").getJSONObject("location").getString("lng");
-            reference = googlePlaceJson.getString("reference");
+
             googlePlaceMap.put("place_name", placeName);
             googlePlaceMap.put("vicinity", vicinity);
             googlePlaceMap.put("lat", latitude);
             googlePlaceMap.put("lng", longitude);
-            googlePlaceMap.put("reference", reference);
+            googlePlaceMap.put("types", types.getString(0));
             Log.d(TAG, "Putting Places");
         } catch (JSONException e) {
             Log.d(TAG, "Error");
