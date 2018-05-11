@@ -68,9 +68,6 @@ public class DataParser {
 
         Log.d(TAG, "getPlace: collecting places");
 
-
-        Log.d("getPlace", "Entered");
-
         try {
             if (!googlePlaceJson.isNull("name")) {
                 placeName = googlePlaceJson.getString("name");
@@ -78,12 +75,11 @@ public class DataParser {
             if (!googlePlaceJson.isNull("vicinity")) {
                 vicinity = googlePlaceJson.getString("vicinity");
             }
-
+            // Checking if opening hours is available. If yes, then insert it into the HashMap
             if (googlePlaceJson.has("opening_hours")) {
                 open_now = String.valueOf(googlePlaceJson.getJSONObject("opening_hours").getBoolean("open_now"));
                 googlePlaceMap.put("open_now", open_now);
             }
-
             // Get list of types for that PoI
             JSONArray types = googlePlaceJson.getJSONArray("types");
             // Get lat and lgn for that PoI

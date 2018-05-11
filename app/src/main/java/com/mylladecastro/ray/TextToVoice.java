@@ -1,4 +1,5 @@
 package com.mylladecastro.ray;
+import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
@@ -13,35 +14,46 @@ import java.util.Locale;
  */
 
 
-public class TextToVoice implements TextToSpeech.OnInitListener{
+@RequiresApi(api = Build.VERSION_CODES.DONUT)
+public class TextToVoice{
     private static final String TAG = TextToVoice.class.getSimpleName();
     TextToSpeech tts;
     String text;
+    Context activity_context;
+    boolean isSpeaking;
+    boolean stopSpeaking;
 
-    public TextToVoice(String text) {
+    public Boolean getSpeaking() {
+        return isSpeaking;
+    }
+
+
+
+    public TextToVoice(String text, Context context) {
+        Log.d(TAG, "TEXT TO SPEECH constructor!");
         this.text = text;
-        Log.d(TAG, "textToVoice constructor");
-
+        this.activity_context = context;
+        initialize();
     }
 
 
-    private void convertText(String text) {
 
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
-    }
-
-
-    @Override
-    public void onInit(int status) {
-        if (status == TextToSpeech.SUCCESS) {
-            int result = tts.setLanguage(Locale.UK);
-
-            if (result == TextToSpeech.LANG_MISSING_DATA
-                    || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.e(TAG, "This language is not supported.");
-            } else {
-                convertText(this.text);
+    private void initialize() {
+        Log.e(TAG,"TextToSpeech initiaize");
+        tts = new TextToSpeech(this.activity_context, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (status == TextToSpeech.SUCCESS) {
+                    isSpeaking = true;
+                    tts.setLanguage(Locale.UK); //TODO: Check if locale is available before setting.
+                    tts.speak(text, TextToSpeech.QUEUE_ADD, null);
+                    isSpeaking = false;
+                }else{
+                    Log.e(TAG,"TextToSpeechInitializeError");
+                }
             }
-        }
+        });
     }
+
+
 }

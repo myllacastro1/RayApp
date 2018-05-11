@@ -1,43 +1,35 @@
+//https://developer.android.com/guide/topics/ui/menus#options-menu
+
 package com.mylladecastro.ray;
 
 import android.Manifest;
-import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
-import android.os.AsyncTask;
 import android.os.Build;
-import android.provider.Settings;
+import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.MotionEventCompat;
 import android.util.Log;
-import android.view.Menu;
+import android.view.MotionEvent;
 import android.view.View;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.common.api.Response;
-import com.google.android.gms.location.places.PlaceReport;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
@@ -47,26 +39,18 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResult;
-import com.google.android.gms.location.LocationSettingsStates;
-import com.google.android.gms.location.LocationSettingsStatusCodes;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 
-import org.json.JSONObject;
-
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        LocationListener {
+        LocationListener,
+        TouchableWrapper.UpdateMapAfterUserInterection {
 
+    public static boolean mMapIsTouched;
     double latitude;
     double longitude;
     private static final String TAG = MapsActivity.class.getSimpleName();
@@ -83,18 +67,42 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LocationRequest locationRequest;
     private Location lastLocation;
     private Marker currentLocationMarker;
-    private static final float DEFAULT_ZOOM = 36f;
+    private static final float DEFAULT_ZOOM = 26f;
     public static final int REQUEST_LOCATION_CODE = 99;
     private FusedLocationProviderClient mFusedLocationClient;
     String type;
     String markers;
     private List<HashMap<String, String>> nearbyPlaces;
+    TextToSpeech t1;
+    private Context context;
+    private static MapsActivity instance;
+    private LatLng initialLocation;
+    public View mOriginalContentView;
+    public TouchableWrapper mTouchView;
+
+    // Implement the interface method
+    public void onUpdateMapAfterUserInterection() {
+        Log.d(TAG, "HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    }
+
+
+    public int getDistance() {
+        return distance;
+    }
+
+    public void setDistance(int distance) {
+        this.distance = distance;
+    }
+
+    public int distance;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+        instance = this;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkLocationPermission();
@@ -104,14 +112,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         /////////////////
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
-        type="hospital";
         /////////////////
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+
+
     }
+
+
 
 
     public boolean checkLocationPermission() {
@@ -202,14 +213,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        Toast.makeText(this, "Map is ready", Toast.LENGTH_SHORT).show();
+
         Log.d(TAG, "onMapReady: applying map view!");
         map = googleMap;
 
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             map.setMyLocationEnabled(true);
-
+            Toast.makeText(this, "Map is ready", Toast.LENGTH_SHORT).show();
 
             //////////////
             map.getUiSettings().setCompassEnabled(false);
@@ -227,8 +238,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-
-
     @Override
     public void onConnectionSuspended(int i) {
 
@@ -239,16 +248,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    public LatLng getFirstLocation() {
+        return this.initialLocation;
+    }
+
+    public void setFirstLocation(LatLng currentLocation) {
+        this.initialLocation = currentLocation;
+        Log.d(TAG, "setFirstLocation: " + this.initialLocation);
+    }
+
+
     @Override
     public void onLocationChanged(Location location) {
         // Once this method is triggered...
         Log.d(TAG, "onLocationChanged: updating location...");
 
+        //setContext(getApplicationContext());
+        //Log.d(TAG, this.context.toString());
 
         lastLocation = location;
-
-        // Getting nearby locations
-        getNearbyPlacesMarkers(location);
 
 
         //Setting current location
@@ -259,19 +277,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         LatLng latlgn = new LatLng(location.getLatitude(), location.getLongitude());
 
+
         MarkerOptions markerOptions = new MarkerOptions();
         // Add marker to received location
         markerOptions.position(latlgn);
 
         // Add red round icon to marker
-        Log.d(TAG, "Adding current location icon");
+        Log.d(TAG, "Adding current location icon at " + latlgn);
         markerOptions.icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher_round));
 
         currentLocationMarker = map.addMarker(markerOptions);
         // Moving camera to current location
         moveCamera(latlgn);
 
-        //getNearbyPlacesMarkers(location);
+        if (latlgn != null) {
+            //getNearbyPlacesMarkers(latlgn);
+        }
 
 
 
@@ -282,23 +303,66 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-    private void getNearbyPlacesMarkers(Location location) {
+    private void getNearbyPlacesMarkers(LatLng currentLocation) {
+        Log.d(TAG, "getNearbyPlacesMarkers: starting... " + currentLocation.latitude);
 
-        latitude = location.getLatitude();
-        longitude = location.getLongitude();
+        LatLng initialLocation = this.getFirstLocation();
 
-        String restaurant = "school";
-        Log.d(TAG, "getNearbyPlacesMarkers: almost getting url");
-        //String url = getUrl(latitude, longitude, restaurant);
-        Object[] DataTransfer = new Object[3];
-        DataTransfer[0] = map;
-        Log.d(TAG, "getNearbyPlacesMarkers map: " + map.toString());
-        DataTransfer[1] = location;
+        int distance = calculationByDistance(currentLocation.latitude, currentLocation.longitude);
+        this.setDistance(distance);
 
-        // Adding nearby places markers on the maps
-        NearbyPlaces getNearbyPlacesData = new NearbyPlaces();
-        getNearbyPlacesData.execute(DataTransfer);
+        Log.d(TAG, "getNearbyPlacesMarkers: distance: " + distance);
+        if (distance >= 50 || initialLocation == null) {
 
+            Log.d(TAG, "getNearbyPlacesMarkers: distance is bigger than 15 meters or initial location is null. Updating markers... ");
+
+            String restaurant = "school";
+            Log.d(TAG, "getNearbyPlacesMarkers: almost getting url");
+            //String url = getUrl(latitude, longitude, restaurant);
+            Object[] DataTransfer = new Object[3];
+            DataTransfer[0] = map;
+            Log.d(TAG, "getNearbyPlacesMarkers map: " + map.toString());
+            DataTransfer[1] = currentLocation.latitude;
+            DataTransfer[2] = currentLocation.longitude;
+
+            // Adding nearby places markers on the maps
+            NearbyPlaces getNearbyPlacesData = new NearbyPlaces();
+            //getNearbyPlacesData.setContext(getApplicationContext());
+            getNearbyPlacesData.execute(DataTransfer);
+        } else if (distance < 10 && distance >1) {
+            Context context = getContext();
+            UserJourney uj = new UserJourney(context);
+            Log.d(TAG, "getNearbyPlacesMarkers: vibrate");
+            uj.vibrate(distance);
+        }
+
+    }
+
+    public int calculationByDistance(double currentLatitude, double currentLongitude) {
+        float[] distance = new float[2];
+
+        LatLng initialLocation = this.getFirstLocation();
+        Log.d(TAG, "calculationByDistance: initialLocation before " + initialLocation);
+        Log.d(TAG, "calculationByDistance: current location " + currentLatitude);
+
+        if (initialLocation == null) {
+            LatLng firstLocation = new LatLng(currentLatitude, currentLongitude);
+            Log.d(TAG, "calculationByDistance: firstLocation: " + firstLocation);
+            this.setFirstLocation(firstLocation);
+            initialLocation = this.getFirstLocation();
+        }
+        Log.d(TAG, "calculationByDistance: initialLocation after " + initialLocation);
+
+        Location.distanceBetween( initialLocation.latitude, initialLocation.longitude,
+                currentLatitude, currentLongitude, distance);
+
+
+
+        int approximate_distance = (int) distance[0];
+
+        Log.d(TAG, "Distance in meters: " + approximate_distance);
+
+        return approximate_distance;
     }
 
 
@@ -309,6 +373,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
+
+
     public List<HashMap<String, String>> getNearbyPlaces() {
         return nearbyPlaces;
     }
@@ -317,6 +383,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         this.nearbyPlaces = nearbyPlaces;
     }
 
+    public static Context getContext() {
+        return instance.getApplicationContext();
+    }
+
+    public void setContext(Context context){
+        this.context = context;
+    }
+
 
 
 }
+
+
+
+
