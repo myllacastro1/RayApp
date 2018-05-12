@@ -16,8 +16,9 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.view.MotionEventCompat;
+import android.support.v4.view.GestureDetectorCompat;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
@@ -27,7 +28,6 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -67,7 +67,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LocationRequest locationRequest;
     private Location lastLocation;
     private Marker currentLocationMarker;
-    private static final float DEFAULT_ZOOM = 26f;
+    private static final float DEFAULT_ZOOM = 20f;
     public static final int REQUEST_LOCATION_CODE = 99;
     private FusedLocationProviderClient mFusedLocationClient;
     String type;
@@ -79,6 +79,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LatLng initialLocation;
     public View mOriginalContentView;
     public TouchableWrapper mTouchView;
+    private GestureDetectorCompat mDetector;
+    NearbyPlaces getNearbyPlacesData;
+    private boolean setMarkers;
+
 
     // Implement the interface method
     public void onUpdateMapAfterUserInterection() {
@@ -216,6 +220,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         Log.d(TAG, "onMapReady: applying map view!");
         map = googleMap;
+        this.setMarkers = true;
 
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -224,7 +229,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             //////////////
             map.getUiSettings().setCompassEnabled(false);
-            map.getUiSettings().setZoomControlsEnabled(true);
+            map.getUiSettings().setZoomControlsEnabled(false);
             map.getUiSettings().setMyLocationButtonEnabled(false);
             map.getUiSettings().setAllGesturesEnabled(false);
             map.setMyLocationEnabled(false);
@@ -290,8 +295,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Moving camera to current location
         moveCamera(latlgn);
 
-        if (latlgn != null) {
-            //getNearbyPlacesMarkers(latlgn);
+        boolean setMarkers = this.setMarkers;
+
+        if (latlgn != null && setMarkers == true) {
+
+            getNearbyPlacesMarkers(latlgn);
         }
 
 
@@ -306,6 +314,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void getNearbyPlacesMarkers(LatLng currentLocation) {
         Log.d(TAG, "getNearbyPlacesMarkers: starting... " + currentLocation.latitude);
 
+        this.setMarkers = false;
+
         LatLng initialLocation = this.getFirstLocation();
 
         int distance = calculationByDistance(currentLocation.latitude, currentLocation.longitude);
@@ -313,8 +323,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         Log.d(TAG, "getNearbyPlacesMarkers: distance: " + distance);
         if (distance >= 50 || initialLocation == null) {
-
-            Log.d(TAG, "getNearbyPlacesMarkers: distance is bigger than 15 meters or initial location is null. Updating markers... ");
+            Log.d(TAG, "getNearbyPlacesMarkers: distance: ");
+            Log.d(TAG, "getNearbyPlacesMarkers: distance is bigger than 50 meters or initial location is null. Updating markers... ");
 
             String restaurant = "school";
             Log.d(TAG, "getNearbyPlacesMarkers: almost getting url");
@@ -326,15 +336,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             DataTransfer[2] = currentLocation.longitude;
 
             // Adding nearby places markers on the maps
-            NearbyPlaces getNearbyPlacesData = new NearbyPlaces();
+            getNearbyPlacesData = getNearbyPlacesData.getInstance();
             //getNearbyPlacesData.setContext(getApplicationContext());
             getNearbyPlacesData.execute(DataTransfer);
-        } else if (distance < 10 && distance >1) {
-            Context context = getContext();
-            UserJourney uj = new UserJourney(context);
-            Log.d(TAG, "getNearbyPlacesMarkers: vibrate");
-            uj.vibrate(distance);
         }
+
+        this.setMarkers = true;
+        //else if (distance < 10 && distance >1) {
+        //    Context context = getContext();
+        //    UserJourney uj = new UserJourney(context);
+        //    Log.d(TAG, "getNearbyPlacesMarkers: vibrate");
+        //    uj.vibrate(distance);
+        //}
 
     }
 

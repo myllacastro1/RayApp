@@ -1,11 +1,9 @@
 package com.mylladecastro.ray;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.speech.tts.TextToSpeech;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
@@ -14,11 +12,9 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Created by mylladecastro on 04/04/2018.
@@ -37,8 +33,28 @@ public class NearbyPlaces extends AsyncTask<Object, String, String> {
     private int PROXIMITY_RADIUS = 50;
     private Context context;
     MapsActivity mapsActivity;
-    TextToSpeech t1;
+    TextToVoice textToVoice;
     List<String> places = new ArrayList<>();
+    private boolean continue_tss = true;
+    private static NearbyPlaces instance;
+    TextToVoice tts;
+    private int distance;
+
+    private HashMap<String, String> currentGooglePlace;
+
+    public static NearbyPlaces getInstance() {
+        if (instance == null) {
+            instance = new NearbyPlaces();
+            return instance;
+        }
+        return instance;
+    }
+
+
+    private NearbyPlaces() {
+
+    }
+
 
     @Override
     protected String doInBackground(Object... params) {
@@ -72,6 +88,11 @@ public class NearbyPlaces extends AsyncTask<Object, String, String> {
         fillNearbyPlacesList(this.nearbyPlacesList);
     }
 
+    public int getDistance() {
+        return distance;
+    }
+
+
     private void fillNearbyPlacesList(List<HashMap<String, String>> nearbyPlacesList) {
 
         Log.d(TAG, "fillNearbyPlacesList: before loop. " + this.nearbyPlacesList.toString());
@@ -84,14 +105,17 @@ public class NearbyPlaces extends AsyncTask<Object, String, String> {
             Double poi_lat = Double.valueOf(googlePlace.get("lat"));
             Double poi_lng = Double.valueOf(googlePlace.get("lng"));
             String type = googlePlace.get("types");
+            Log.d(TAG, "Type " + type);
             // Creating PoI location object
             //LatLng poi_location = new LatLng(poi_lat, poi_lng);
             // Creating current location obj
             //LatLng current_location = new LatLng(this.currentLocationLatitude, this.currentLocationLongitude);
             // Calculating distance between the 2 points
-            int distance = calculationByDistance(poi_lat, poi_lng);
+            this.distance = calculationByDistance(poi_lat, poi_lng);
+            Log.d(TAG, "fillNearbyPlacesList continue_tss: " + this.continue_tss);
 
-            if (distance <= 10) {
+            if (distance <= 15 && this.continue_tss == true) {
+                Log.d(TAG, "fillNearbyPlacesList continue_tss: " + this.continue_tss + "; distance: " + distance);
                 textToSpeechHandler(googlePlace);
             }
             // Add markers to the map
@@ -115,13 +139,17 @@ public class NearbyPlaces extends AsyncTask<Object, String, String> {
             case "school":
                 mMap.addMarker(new MarkerOptions()
                         .position(new LatLng(poi_lat, poi_lng))
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
                 break;
             case "taxi_stand":
                 mMap.addMarker(new MarkerOptions()
                         .position(new LatLng(poi_lat, poi_lng))
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
                 break;
+            default:
+                mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(poi_lat, poi_lng))
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
         }
 
     }
@@ -152,24 +180,63 @@ public class NearbyPlaces extends AsyncTask<Object, String, String> {
     }
 
     private void textToSpeechHandler(HashMap<String, String> googlePlace) {
-
+        this.setCurrentGooglePlace(googlePlace);
         String placeName = googlePlace.get("place_name");
-        String vicinity = googlePlace.get("vicinity");
-        String type = googlePlace.get("types");
-        Log.d(TAG, "TEXT TO SPEECH handler");
-        Context context = mapsActivity.getContext();
+        Log.d(TAG, "tTS handler currentPlace: " + placeName);
+        context = mapsActivity.getContext();
 
-        if (context != null && !places.contains(placeName)) {
-            places.add(placeName);
-            TextToVoice tts = new TextToVoice(vicinity, context);
+        if (context != null) {
+            //&& !places.contains(placeName)
+            //places.add(placeName);
+            Log.d(TAG, "tTS handler creating tts obj");
+            this.tts = new TextToVoice(context, placeName);
             //tts.setStopSpeaking();
-            Log.d(TAG, "places array: " + places.toString());
+            //Log.d(TAG, "places array: " + places.toString());
         }
 
     }
 
+    public HashMap<String, String> getCurrentGooglePlace() {
+        return currentGooglePlace;
+    }
+
+    public void setCurrentGooglePlace(HashMap<String, String> currentGooglePlace) {
+        this.currentGooglePlace = currentGooglePlace;
+    }
+
+    public void setContinue_tss(boolean continue_tss) {
+        this.continue_tss = continue_tss;
+    }
 
 
+    public void ttsKnowMore() {
+        HashMap<String, String> place = this.getCurrentGooglePlace();
+        context = mapsActivity.getContext();
+        String text = null;
 
 
+        String type = place.get("types");
+        Log.d(TAG, "Open now: " + type);
+        String open_now = place.get("open_now");
+        Log.d(TAG, "Open now: " + open_now);
+
+        switch (open_now) {
+            case "true":
+                text = "This is a " + type + " and is open now";
+                break;
+            case "false":
+                text = "This is a " + type + " and is closed now";
+                break;
+            default:
+                text = "This is a " + type;
+                break;
+        }
+
+        Log.d(TAG, "Text: " + text);
+        this.tts = new TextToVoice(context, text);
+        //keep telling places around
+        this.continue_tss = true;
+
+
+    }
 }

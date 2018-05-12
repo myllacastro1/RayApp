@@ -14,10 +14,18 @@ public class UserJourney {
     TextToVoice tts;
     MapsActivity mapsActivity;
     Context context;
+    NearbyPlaces nearbyPlaces;
+    int distance;
     private static final String TAG = UserJourney.class.getSimpleName();
 
     UserJourney(Context context) {
         this.context = context;
+    }
+
+    public void getDistance() {
+        nearbyPlaces = nearbyPlaces.getInstance();
+        this.distance = nearbyPlaces.getDistance();
+        vibrate(distance);
     }
 
     public void vibrate(int distance) {
@@ -39,4 +47,6 @@ public class UserJourney {
         }
 
     }
+
+
 }

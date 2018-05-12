@@ -1,7 +1,6 @@
 package com.mylladecastro.ray;
 import android.content.Context;
 import android.os.Build;
-import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
@@ -17,42 +16,48 @@ import java.util.Locale;
 @RequiresApi(api = Build.VERSION_CODES.DONUT)
 public class TextToVoice{
     private static final String TAG = TextToVoice.class.getSimpleName();
+    private Context activity_context;
     TextToSpeech tts;
     String text;
-    Context activity_context;
     boolean isSpeaking;
     boolean stopSpeaking;
-
-    public Boolean getSpeaking() {
-        return isSpeaking;
-    }
+    private static TextToVoice instance;
+    MapsActivity mapsActivity;
 
 
-
-    public TextToVoice(String text, Context context) {
-        Log.d(TAG, "TEXT TO SPEECH constructor!");
-        this.text = text;
+    public TextToVoice(Context context, String text) {
+        Log.d(TAG, "constructor!");
         this.activity_context = context;
+        this.text = text;
+        Log.d(TAG, "constructor, context:" + activity_context);
         initialize();
     }
 
 
 
     private void initialize() {
-        Log.e(TAG,"TextToSpeech initiaize");
-        tts = new TextToSpeech(this.activity_context, new TextToSpeech.OnInitListener() {
+        Log.e(TAG,"TextToSpeech initialize");
+        this.tts = new TextToSpeech(this.activity_context, new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
                 if (status == TextToSpeech.SUCCESS) {
-                    isSpeaking = true;
                     tts.setLanguage(Locale.UK); //TODO: Check if locale is available before setting.
                     tts.speak(text, TextToSpeech.QUEUE_ADD, null);
-                    isSpeaking = false;
+                    stopSpeaking = false;
+
                 }else{
                     Log.e(TAG,"TextToSpeechInitializeError");
                 }
             }
         });
+    }
+
+    public void speak(String text) {
+        if (stopSpeaking == false) {
+            stopSpeaking = true;
+            this.tts.speak(text, TextToSpeech.QUEUE_ADD, null);
+            stopSpeaking = false;
+        }
     }
 
 

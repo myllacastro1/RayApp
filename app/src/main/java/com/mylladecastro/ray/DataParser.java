@@ -91,6 +91,7 @@ public class DataParser {
             googlePlaceMap.put("lat", latitude);
             googlePlaceMap.put("lng", longitude);
             googlePlaceMap.put("types", types.getString(0));
+            googlePlaceMap.put("open_now", open_now);
             Log.d(TAG, "Putting Places");
         } catch (JSONException e) {
             Log.d(TAG, "Error");
