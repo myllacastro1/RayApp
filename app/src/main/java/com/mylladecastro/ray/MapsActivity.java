@@ -6,6 +6,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.location.Location;
 import android.os.Build;
 import android.speech.tts.TextToSpeech;
@@ -112,6 +113,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+        getActionBar().setIcon(R.mipmap.ic_logo);
+
+        getActionBar().setDisplayShowHomeEnabled(true);
+        getActionBar().setLogo(R.mipmap.ic_logo);
+        getActionBar().setDisplayUseLogoEnabled(true);
         instance = this;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

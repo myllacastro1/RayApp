@@ -171,7 +171,7 @@ public class NearbyPlaces extends AsyncTask<Object, String, String> {
             case "route":
                 mMap.addMarker(new MarkerOptions()
                         .position(new LatLng(poi_lat, poi_lng))
-                        .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher_round)));
+                        .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_blue)));
                 break;
             default:
                 mMap.addMarker(new MarkerOptions()
