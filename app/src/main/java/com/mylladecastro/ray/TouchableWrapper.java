@@ -14,7 +14,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 
-public  class TouchableWrapper extends FrameLayout implements
+public class TouchableWrapper extends FrameLayout implements
         OnTouchListener{
 
     private long lastTouched = 0;
@@ -36,7 +36,8 @@ public  class TouchableWrapper extends FrameLayout implements
 
     public TouchableWrapper(Context context) {
         super(context);
-
+        this.userJourney = new UserJourney(context);
+        this.nearbyPlaces = nearbyPlaces.getInstance();
 
         // Force the host activity to implement the UpdateMapAfterUserInterection Interface
         try {
@@ -95,21 +96,28 @@ public  class TouchableWrapper extends FrameLayout implements
                 if (deltaX < -300 && deltaY > -50 && deltaY < 200) {
                     Log.d(DEBUG_TAG, "Swipe right");
                     mSwipeDetected = Action.LR;
-                    nearbyPlaces = nearbyPlaces.getInstance();
-                    nearbyPlaces.setContinue_tss(false);
-                    nearbyPlaces.ttsKnowMore();
+                    this.nearbyPlaces.setContinue_tss(false);
+                    this.nearbyPlaces.ttsKnowMore();
                     return false;
                 } else if (deltaX > 300 && deltaY > -200 && deltaY < 0) {
                     Log.d(DEBUG_TAG, "Swipe left");
-                        mSwipeDetected = Action.RL;
-                        return false;
-                } else if (deltaY > 400 && deltaX > -100 && deltaX < 0) {
-                        Log.d(DEBUG_TAG, "Swipe UP");
-                        mSwipeDetected = Action.BT;
-                        return false;
-                } else if (deltaY > -600 && deltaX > 0) {
+                    mSwipeDetected = Action.RL;
+                    this.nearbyPlaces.setContinue_tss(false);
+                    this.userJourney.setStopVibration(false);
+                    this.userJourney.startJourney();
+                    return false;
+                } else if (deltaY > 100 && deltaX > -100 && deltaX < 0) {
+                    Log.d(DEBUG_TAG, "Swipe UP");
+                    mSwipeDetected = Action.BT;
+                    this.nearbyPlaces.setContinue_tss(false);
+                    this.nearbyPlaces.ttsCurrentLocation();
+
+                    return false;
+                } else if (deltaY > -600 && deltaY > -400 && deltaX > 0 && deltaX < 20) {
                         Log.d(DEBUG_TAG, "Swipe down");
                         mSwipeDetected = Action.TB;
+                        this.userJourney.setStopVibration(true);
+                        nearbyPlaces.setContinue_tss(true);
                         return false;
                 } else {
                     Log.d(DEBUG_TAG, "Moviment not recognized");

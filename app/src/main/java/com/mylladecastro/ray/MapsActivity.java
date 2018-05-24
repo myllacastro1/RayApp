@@ -67,7 +67,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LocationRequest locationRequest;
     private Location lastLocation;
     private Marker currentLocationMarker;
-    private static final float DEFAULT_ZOOM = 20f;
+    private static final float DEFAULT_ZOOM = 24f;
     public static final int REQUEST_LOCATION_CODE = 99;
     private FusedLocationProviderClient mFusedLocationClient;
     String type;
@@ -82,6 +82,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GestureDetectorCompat mDetector;
     NearbyPlaces getNearbyPlacesData;
     private boolean setMarkers;
+
+    public void setSetMarkers(boolean setMarkers) {
+        this.setMarkers = setMarkers;
+    }
+
+
 
 
     // Implement the interface method
@@ -267,12 +273,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onLocationChanged(Location location) {
         // Once this method is triggered...
         Log.d(TAG, "onLocationChanged: updating location...");
-
-        //setContext(getApplicationContext());
-        //Log.d(TAG, this.context.toString());
-
         lastLocation = location;
-
 
         //Setting current location
         // If the marker is already set, remove it to replace by the current location one
@@ -289,18 +290,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Add red round icon to marker
         Log.d(TAG, "Adding current location icon at " + latlgn);
-        markerOptions.icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_launcher_round));
+        markerOptions.icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_current_location));
 
         currentLocationMarker = map.addMarker(markerOptions);
         // Moving camera to current location
         moveCamera(latlgn);
 
-        boolean setMarkers = this.setMarkers;
-
-        if (latlgn != null && setMarkers == true) {
-
-            getNearbyPlacesMarkers(latlgn);
-        }
+        markersHandler(latlgn);
 
 
 
@@ -311,37 +307,57 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-    private void getNearbyPlacesMarkers(LatLng currentLocation) {
-        Log.d(TAG, "getNearbyPlacesMarkers: starting... " + currentLocation.latitude);
+    private void markersHandler(LatLng currentLocation) {
+        Log.d(TAG, "markersHandler: starting... " + currentLocation.latitude);
 
-        this.setMarkers = false;
+        //this.setMarkers = false;
 
-        LatLng initialLocation = this.getFirstLocation();
+        boolean addMarkers;
 
         int distance = calculationByDistance(currentLocation.latitude, currentLocation.longitude);
         this.setDistance(distance);
 
-        Log.d(TAG, "getNearbyPlacesMarkers: distance: " + distance);
-        if (distance >= 50 || initialLocation == null) {
-            Log.d(TAG, "getNearbyPlacesMarkers: distance: ");
-            Log.d(TAG, "getNearbyPlacesMarkers: distance is bigger than 50 meters or initial location is null. Updating markers... ");
-
-            String restaurant = "school";
-            Log.d(TAG, "getNearbyPlacesMarkers: almost getting url");
-            //String url = getUrl(latitude, longitude, restaurant);
-            Object[] DataTransfer = new Object[3];
-            DataTransfer[0] = map;
-            Log.d(TAG, "getNearbyPlacesMarkers map: " + map.toString());
-            DataTransfer[1] = currentLocation.latitude;
-            DataTransfer[2] = currentLocation.longitude;
-
-            // Adding nearby places markers on the maps
-            getNearbyPlacesData = getNearbyPlacesData.getInstance();
-            //getNearbyPlacesData.setContext(getApplicationContext());
-            getNearbyPlacesData.execute(DataTransfer);
+        if (distance >= 500 || this.setMarkers == true) {
+            this.setMarkers = false;
+            addMarkers = true;
+        } else {
+            addMarkers = false;
         }
 
-        this.setMarkers = true;
+        Log.d(TAG, "addMarkers: " + addMarkers);
+        Log.d(TAG, "setMarkers: " + this.setMarkers);
+        getNearbyPlacesMarkers(currentLocation, addMarkers);
+
+
+
+    }
+
+    private void getNearbyPlacesMarkers(LatLng currentLocation, boolean addMarkers) {
+
+        Log.d(TAG, "getNearbyPlacesMarkers: distance is bigger than 50 meters or initial location is null. Updating markers... ");
+
+        Log.d(TAG, "getNearbyPlacesMarkers: almost getting url.");
+        //String url = getUrl(latitude, longitude, restaurant);
+        Object[] DataTransfer = new Object[4];
+        DataTransfer[0] = map;
+        Log.d(TAG, "getNearbyPlacesMarkers map: " + map.toString());
+        DataTransfer[1] = currentLocation.latitude;
+        Log.d(TAG, "getNearbyPlacesMarkers: latitude " + currentLocation.latitude);
+        DataTransfer[2] = currentLocation.longitude;
+        DataTransfer[3] = addMarkers;
+        Log.d(TAG, "getNearbyPlacesMarkers: addMarkers " + addMarkers);
+        getNearbyPlacesData = getNearbyPlacesData.getInstance();
+        Log.d(TAG, "getNearbyPlacesMarkers: instance " + getNearbyPlacesData);
+
+        if (addMarkers == true) {
+            getNearbyPlacesData.execute(DataTransfer);
+        } else {
+            getNearbyPlacesData.nearbyPlaceName(currentLocation);
+        }
+
+
+
+        //this.setMarkers = true;
         //else if (distance < 10 && distance >1) {
         //    Context context = getContext();
         //    UserJourney uj = new UserJourney(context);

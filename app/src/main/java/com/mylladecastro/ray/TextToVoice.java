@@ -42,6 +42,7 @@ public class TextToVoice{
             public void onInit(int status) {
                 if (status == TextToSpeech.SUCCESS) {
                     tts.setLanguage(Locale.UK); //TODO: Check if locale is available before setting.
+                    tts.setPitch(1);
                     tts.speak(text, TextToSpeech.QUEUE_ADD, null);
                     stopSpeaking = false;
 
